@@ -1,7 +1,8 @@
-#ifndef __TYPES_H
-#define __TYPES_H
+#ifndef USER_TYPES_H
+#define USER_TYPES_H
 
-#include "vmlinux.h"
+#include <linux/types.h>
+
 #define MAX_FILENAME_LEN 255
 
 /* Event types */
@@ -10,22 +11,16 @@
 #define WRITE_EVENT 0xeu
 #define RENAME_EVENT 0xfu
 
-#ifndef S_ISDIR
-#define S_IFMT 00170000
-#define S_IFDIR 0040000
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
-
 /* ───────────────────────────────────────────── */
 
-struct KEY {
+typedef struct {
   __u64 inode;
   __u64 dev;
-};
+} KEY;
 
-struct VALUE {
+typedef struct {
   __u64 dummy;
-};
+} VALUE;
 
 struct dentry_ctx {
   __u64 inode;
@@ -34,12 +29,12 @@ struct dentry_ctx {
   __s64 before_size;
 };
 
-struct EVENT {
+typedef struct {
   __u64 giduid;
   __u8 change_type;
   __u32 bytes_written;
   __s64 file_size;
   struct dentry_ctx dentry_ctx;
-};
+} EVENT;
 
-#endif /* __TYPES_H */
+#endif /* USER_TYPES_H */
