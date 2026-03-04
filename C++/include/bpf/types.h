@@ -2,7 +2,7 @@
 #define __TYPES_H
 
 #include "vmlinux.h"
-#define MAX_FILENAME_LEN 255
+#define MAX_FILENAME_LEN 256
 
 /* Event types */
 #define CREATE_EVENT 0xcu
@@ -37,24 +37,22 @@ struct dentry_ctx {
   __s64 before_size;
   __u8 change_type;
 #ifdef CONFIG_RENAME
-  bool overwrite;
-  __u64 target_ino;
-  __u64 target_dev;
-  __s64 target_size;
   bool is_dir;
   bool is_old_dir_mon;
   bool is_new_dir;
+  __u64 target_ino;
+  __u64 target_dev;
+  __s64 target_size;
+  bool unused;
   bool inode_mon;    // folder itself is monitored
   bool is_cross_dir; // old_dir != new_dir
-#endif
-#ifdef CONFIG_MODIFY
-  __u64 open_id;
+  bool overwrite;
 #endif
 };
 
 struct EVENT {
   __u64 giduid;
-  __u32 bytes_written;
+  __u64 bytes_written;
   __s64 file_size;
   struct dentry_ctx dentry_ctx;
 };

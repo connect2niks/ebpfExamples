@@ -3,7 +3,8 @@
 #include <cstdio>
 #include <unistd.h>
 
-#include "user_types.h"
+#include "event.hpp"
+#include "shared_types.h"
 
 extern "C" {
 #include "fentry_bpf.skel.h"
@@ -34,6 +35,11 @@ static volatile sig_atomic_t signal_received = 0;
 void handle_signal(int) { signal_received = 1; }
 
 int main(int argc, char **argv) {
+
+  Events *events;
+  thread producer_thread;
+  thread consumer_thread;
+
   fentry_bpf *skel = fentry_bpf::open_and_load();
 
   if (!skel) {
@@ -49,14 +55,25 @@ int main(int argc, char **argv) {
 
   example_map_insert(skel);
 
+  events = new Events(skel->maps.rb);
+
   printf("Successfully started!\n");
   printf("Run: sudo cat /sys/kernel/debug/tracing/trace_pipe\n");
 
   signal(SIGINT, handle_signal);
 
+  producer_thread = thread([&]() { events->producer(); });
+
+  consumer_thread = thread([&]() { events->consumer(); });
+
   while (!signal_received) {
     sleep(1);
   }
+
+  events->stop();
+  producer_thread.join();
+  consumer_thread.join();
+  delete events;
 
 cleanup:
   fentry_bpf::destroy(skel);

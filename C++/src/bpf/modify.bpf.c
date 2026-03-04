@@ -37,7 +37,6 @@ int BPF_PROG(fim_file_permission, struct file *file, int mask) {
   if (!event)
     return 0;
 
-  event->dentry_ctx.open_id = fptr;
   event->dentry_ctx.inode = BPF_CORE_READ(file, f_inode, i_ino);
   event->dentry_ctx.dev = BPF_CORE_READ(file, f_inode, i_sb, s_dev);
   event->dentry_ctx.before_size = size;

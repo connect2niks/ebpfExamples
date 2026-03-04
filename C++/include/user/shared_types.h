@@ -3,7 +3,7 @@
 
 #include <linux/types.h>
 
-#define MAX_FILENAME_LEN 255
+#define MAX_FILENAME_LEN 256
 
 /* Event types */
 #define CREATE_EVENT 0xcu
@@ -27,14 +27,26 @@ struct dentry_ctx {
   __u64 dev;
   __u8 filepath[MAX_FILENAME_LEN];
   __s64 before_size;
+  __u8 change_type;
+#ifdef CONFIG_RENAME
+  bool is_dir;
+  bool is_old_dir_mon;
+  bool is_new_dir;
+  __u64 target_ino;
+  __u64 target_dev;
+  __s64 target_size;
+  bool unused;
+  bool inode_mon;    // folder itself is monitored
+  bool is_cross_dir; // old_dir != new_dir
+  bool overwrite;
+#endif
 };
 
-typedef struct {
+struct EVENT {
   __u64 giduid;
-  __u8 change_type;
-  __u32 bytes_written;
+  __u64 bytes_written;
   __s64 file_size;
   struct dentry_ctx dentry_ctx;
-} EVENT;
+};
 
 #endif /* USER_TYPES_H */

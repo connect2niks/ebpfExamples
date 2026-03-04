@@ -1,14 +1,25 @@
-
-
 INCLUDE_DIR = ../../include/user
 PROG_NAME = fentry
 
+CXX = g++
+CXXFLAGS = -std=c++20 -I$(INCLUDE_DIR) -pthread
+LDFLAGS = -lbpf -pthread
 
-all : USER_BUILD 
+USER_SRCS = event.cpp main.cpp
+USER_OBJS = $(USER_SRCS:.cpp=.o)
 
+ifeq ($(CONFIG_RENAME),y)
+CXXFLAGS += -DCONFIG_RENAME
+endif
 
-USER_BUILD:
-	g++ main.cpp -o ../../$(PROG_NAME) -lbpf -std=c++17 -I$(INCLUDE_DIR)
+all: USER_BUILD
+
+%.o: %.cpp
+	$(CXX) -c $< -o $@ $(CXXFLAGS)
+
+USER_BUILD: $(USER_OBJS)
+	$(CXX) $(USER_OBJS) -o ../../$(PROG_NAME) $(LDFLAGS)
 
 clean:
-	rm ../../$(PROG_NAME)
+	rm -f ../../$(PROG_NAME)
+	rm -f *.o

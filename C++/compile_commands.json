@@ -13,11 +13,127 @@
       "-DCONFIG_RENAME",
       "-c",
       "-o",
+      "maps.bpf.o",
+      "maps.bpf.c"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/maps.bpf.c",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/maps.bpf.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-g",
+      "-O2",
+      "-target",
+      "bpf",
+      "-I../../include/bpf",
+      "-DCONFIG_CREATE",
+      "-DCONFIG_DELETE",
+      "-DCONFIG_MODIFY",
+      "-DCONFIG_RENAME",
+      "-c",
+      "-o",
+      "create.bpf.o",
+      "create.bpf.c"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/create.bpf.c",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/create.bpf.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-g",
+      "-O2",
+      "-target",
+      "bpf",
+      "-I../../include/bpf",
+      "-DCONFIG_CREATE",
+      "-DCONFIG_DELETE",
+      "-DCONFIG_MODIFY",
+      "-DCONFIG_RENAME",
+      "-c",
+      "-o",
+      "delete.bpf.o",
+      "delete.bpf.c"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/delete.bpf.c",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/delete.bpf.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-g",
+      "-O2",
+      "-target",
+      "bpf",
+      "-I../../include/bpf",
+      "-DCONFIG_CREATE",
+      "-DCONFIG_DELETE",
+      "-DCONFIG_MODIFY",
+      "-DCONFIG_RENAME",
+      "-c",
+      "-o",
       "modify.bpf.o",
       "modify.bpf.c"
     ],
     "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf",
     "file": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/modify.bpf.c",
     "output": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/modify.bpf.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang",
+      "-g",
+      "-O2",
+      "-target",
+      "bpf",
+      "-I../../include/bpf",
+      "-DCONFIG_CREATE",
+      "-DCONFIG_DELETE",
+      "-DCONFIG_MODIFY",
+      "-DCONFIG_RENAME",
+      "-c",
+      "-o",
+      "rename.bpf.o",
+      "rename.bpf.c"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/rename.bpf.c",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/bpf/rename.bpf.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-I../../include/user",
+      "-pthread",
+      "-DCONFIG_RENAME",
+      "-o",
+      "event.o",
+      "event.cpp"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/user",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/user/event.cpp",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/user/event.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/g++",
+      "-c",
+      "-std=c++20",
+      "-I../../include/user",
+      "-pthread",
+      "-DCONFIG_RENAME",
+      "-o",
+      "main.o",
+      "main.cpp"
+    ],
+    "directory": "/home/abinash/Desktop/ebpfExamples/C++/src/user",
+    "file": "/home/abinash/Desktop/ebpfExamples/C++/src/user/main.cpp",
+    "output": "/home/abinash/Desktop/ebpfExamples/C++/src/user/main.o"
   }
 ]
