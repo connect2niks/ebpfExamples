@@ -3,6 +3,7 @@
 
 #include "shared_types.h"
 #include "types.hpp"
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
@@ -32,8 +33,8 @@ public:
 class Parser {
 
 public:
-  explicit Parser(const std::string &policyFilePath);
-  ~Parser() = default;
+  Parser(const std::string &policyFilePath);
+  ~Parser();
 
   void parsePolicyFile();
 
@@ -45,26 +46,29 @@ public:
   void printParser() const;
 #endif
 
-private:
+public:
   std::string policyFilePath;
 
-  std::vector<Token> tokens;
+  std::vector<Token> *tokens;
 
   /* API configuration */
-  std::vector<std::string> api_url;
-  std::vector<std::pair<std::string, std::string>> api_header;
+  std::vector<std::string> *api_url;
+  std::vector<std::pair<std::string, std::string>> *api_header;
 
   /* exclusion rules */
-  std::unordered_map<KEY, uint8_t> exclude_dir;
-  user_space_filter userSpaceFilter;
+  std::unordered_map<std::string, int> *exclude_dir;
+  user_space_filter *userSpaceFilter;
 
   /* inclusion rules */
-  std::unordered_map<KEY, VALUE> include_dir;
+  std::vector<std::pair<KEY, VALUE>> *include_dir;
 
   /* parser pipeline */
-  void tokenize();
-  void syntaxValidation();
-  void semanticValidation();
+  int tokenize();
+  int syntaxValidation();
+  int semanticValidation();
+  int compile();
+  int parseRule(const Token &token);
+  int fill_exclusion_rules();
 };
 
 #endif

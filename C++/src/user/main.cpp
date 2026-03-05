@@ -1,9 +1,12 @@
+#include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 #include <csignal>
 #include <cstdio>
+#include <linux/bpf.h>
 #include <unistd.h>
 
 #include "event.hpp"
+#include "parser.hpp"
 #include "shared_types.h"
 
 extern "C" {
@@ -30,6 +33,36 @@ void example_map_insert(fentry_bpf *skel) {
   fprintf(stderr, "Successfully updated map\n");
 }
 
+int load_Inode_map(Parser *obj, fentry_bpf *skel) {
+
+  __u32 size = (__u32)obj->include_dir->size();
+
+  int mapfd = bpf_map__fd(skel->maps.InodeMap);
+
+  if (mapfd < 0) {
+    fprintf(stderr, "Failed to get map fd\n");
+    return -1;
+  }
+
+  std::vector<KEY> keys;
+  std::vector<VALUE> values;
+
+  for (auto &[key, value] : *obj->include_dir) {
+
+    keys.push_back(key);
+    values.push_back(value);
+  }
+
+  int err =
+      bpf_map_update_batch(mapfd, keys.data(), values.data(), &size, NULL);
+  if (err) {
+    fprintf(stderr, "Failed to update map\n");
+    return -1;
+  }
+  fprintf(stderr, "Successfully updated map\n");
+  return 0;
+}
+
 static volatile sig_atomic_t signal_received = 0;
 
 void handle_signal(int) { signal_received = 1; }
@@ -39,21 +72,31 @@ int main(int argc, char **argv) {
   Events *events;
   thread producer_thread;
   thread consumer_thread;
+  Parser *parser;
+  int err;
+  fentry_bpf *skel;
 
-  fentry_bpf *skel = fentry_bpf::open_and_load();
+  parser = new Parser("config.txt");
+  err = parser->compile();
+  if (err) {
+    fprintf(stderr, "Failed to compile parser\n");
+    return 1;
+  }
+
+  skel = fentry_bpf::open_and_load();
 
   if (!skel) {
     fprintf(stderr, "Failed to open skeleton\n");
     return 1;
   }
 
-  int err = fentry_bpf::attach(skel);
+  err = fentry_bpf::attach(skel);
   if (err) {
     fprintf(stderr, "Failed to attach skeleton\n");
     goto cleanup;
   }
 
-  example_map_insert(skel);
+  load_Inode_map(parser, skel);
 
   events = new Events(skel->maps.rb);
 

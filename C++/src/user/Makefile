@@ -5,21 +5,47 @@ CXX = g++
 CXXFLAGS = -std=c++20 -I$(INCLUDE_DIR) -pthread
 LDFLAGS = -lbpf -pthread
 
-USER_SRCS = event.cpp main.cpp
+# Sources that are shared (no main here)
+USER_SRCS = event.cpp parser.cpp
 USER_OBJS = $(USER_SRCS:.cpp=.o)
+
+MAIN_SRC = main.cpp
+MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
+
+CONFIG_DEBUG_TOKENS = y
+CONFIG_DEBUG_PARSER = y
 
 ifeq ($(CONFIG_RENAME),y)
 CXXFLAGS += -DCONFIG_RENAME
 endif
+
+ifeq ($(CONFIG_DEBUG_TOKENS),y)
+CXXFLAGS += -DDEBUG_TOKENS
+endif
+
+ifeq ($(CONFIG_DEBUG_PARSER),y)
+CXXFLAGS += -DDEBUG_PARSER
+endif
+
 
 all: USER_BUILD
 
 %.o: %.cpp
 	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
-USER_BUILD: $(USER_OBJS)
-	$(CXX) $(USER_OBJS) -o ../../$(PROG_NAME) $(LDFLAGS)
+USER_BUILD: $(MAIN_OBJ) $(USER_OBJS)
+	$(CXX) $(MAIN_OBJ) $(USER_OBJS) -o ../../$(PROG_NAME) $(LDFLAGS)
 
 clean:
 	rm -f ../../$(PROG_NAME)
+	rm -f tests
 	rm -f *.o
+
+
+
+# Test build
+TEST_SRCS = tests.cpp
+TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+
+tests: $(TEST_OBJS) $(USER_OBJS)
+	$(CXX) $(TEST_OBJS) $(USER_OBJS) -o tests $(LDFLAGS)

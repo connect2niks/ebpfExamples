@@ -1,0 +1,12 @@
+API_URL: https://security.example.com/v1/policy/report
+API_HEADER: Authorization=Bearer
+API_HEADER: Content-Type=application/json
+# API_HEADER: X-Agent-ID=host-01
+
+D: /home/abinash/Desktop/ebpfExamples/C++/tmp
+E: /opt/app/cache
+EE: .log
+ES: _old
+IF: /home/abinash/Desktop/ebpfExamples/C++/pmt
+
+# this is a comment
