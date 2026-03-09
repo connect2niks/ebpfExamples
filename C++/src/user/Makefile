@@ -1,19 +1,21 @@
 INCLUDE_DIR = ../../include/user
+INCLUDE = ../../include
 PROG_NAME = fentry
 
 CXX = g++
-CXXFLAGS = -std=c++20 -I$(INCLUDE_DIR) -pthread
-LDFLAGS = -lbpf -pthread
+CXXFLAGS = -std=c++20 -I$(INCLUDE_DIR) -I$(INCLUDE) -pthread -lcurl
+LDFLAGS = -lbpf -pthread -lcurl
 
 # Sources that are shared (no main here)
-USER_SRCS = event.cpp parser.cpp
+USER_SRCS = logging.cpp event.cpp parser.cpp userspacefilter.cpp  processevent.cpp
 USER_OBJS = $(USER_SRCS:.cpp=.o)
 
-MAIN_SRC = main.cpp
+MAIN_SRC = main.cpp 
 MAIN_OBJ = $(MAIN_SRC:.cpp=.o)
 
 CONFIG_DEBUG_TOKENS = y
 CONFIG_DEBUG_PARSER = y
+CONFIG_DEBUG_USERSPACE_FILTER = y
 
 ifeq ($(CONFIG_RENAME),y)
 CXXFLAGS += -DCONFIG_RENAME
@@ -25,6 +27,10 @@ endif
 
 ifeq ($(CONFIG_DEBUG_PARSER),y)
 CXXFLAGS += -DDEBUG_PARSER
+endif
+
+ifeq ($(CONFIG_DEBUG_USERSPACE_FILTER),y)
+CXXFLAGS += -DDEBUG_USERSPACE_FILTER
 endif
 
 

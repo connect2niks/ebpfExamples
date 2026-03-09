@@ -1,11 +1,15 @@
-API_URL: https://security.example.com/v1/policy/report
-API_HEADER: Authorization=Bearer
+API_URL: http://127.0.0.1:8080
 API_HEADER: Content-Type=application/json
-# API_HEADER: X-Agent-ID=host-01
+API_HEADER: X-Agent-UUID=host-01
+API_HEADER: X-API-Key=abc123
 
 D: /home/abinash/Desktop/ebpfExamples/C++/tmp
 E: /opt/app/cache
-EE: .log
+EE: log
+EE: swp
+EE: swpx
+
+ES: ~
 ES: _old
 
 

@@ -1,7 +1,7 @@
 #ifndef __MAPS_H
 #define __MAPS_H
 
-#include "types.h"
+#include "shared_types.h"
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 

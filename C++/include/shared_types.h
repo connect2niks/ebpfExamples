@@ -1,10 +1,20 @@
-#ifndef __TYPES_H
-#define __TYPES_H
-
+#ifndef USER_TYPES_H
+#define USER_TYPES_H
+#ifdef CONFIG_BPF
 #include "vmlinux.h"
+#ifndef S_ISDIR
+#define S_IFMT 00170000
+#define S_IFDIR 0040000
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+#else
+#include <linux/types.h>
+#endif
+
 #define MAX_PATH_LEN 512
 #define PER_LEVEL 32
 #define MAX_DEPTH (MAX_PATH_LEN / PER_LEVEL)
+
 /* Event types */
 #define CREATE_EVENT 0xcu
 #define DELETE_EVENT 0xdu
@@ -12,13 +22,7 @@
 #define RENAME_C_EVENT 0xfu
 #define RENAME_D_EVENT 0xa
 #define RENAME_OW_EVENT 0xb
-#define WRITE_FINAL_EVENT 0xcu
-
-#ifndef S_ISDIR
-#define S_IFMT 00170000
-#define S_IFDIR 0040000
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
+#define WRITE_FINAL_EVENT 0x10u
 
 /* ───────────────────────────────────────────── */
 
@@ -36,7 +40,7 @@ struct dentry_ctx {
   __u64 dev;
   char filepath[MAX_PATH_LEN];
   __s64 before_size;
-  __u8 change_type;
+  __u64 len;
 #ifdef CONFIG_RENAME
   bool is_dir;
   bool is_old_dir_mon;
@@ -49,7 +53,6 @@ struct dentry_ctx {
   bool is_cross_dir; // old_dir != new_dir
   bool overwrite;
 #endif
-  struct vfsmount *mnt;
 };
 
 struct EVENT {
@@ -57,10 +60,11 @@ struct EVENT {
   __u32 change_type;
   __u64 bytes_written;
   __s64 file_size;
-  char filepath[MAX_PATH_LEN];
   __s64 before_size;
   __u32 tty_major;
   __u32 tty_minor;
+  __u64 len;
+  char filepath[MAX_PATH_LEN];
 };
 
-#endif /* __TYPES_H */
+#endif /* USER_TYPES_H */

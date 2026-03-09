@@ -1,12 +1,18 @@
 #include "event.hpp"
-#include "types.hpp"
+#include "logging.hpp"
+#include "payload.hpp"
+#include "processevent.hpp"
+#include "userspacefilter.hpp"
 #include <bpf/libbpf.h>
 #include <cstdio>
 #include <cstring>
 
 int callback(void *ctx, void *data, size_t size);
 void print_event(EVENT *event);
-Packet process_event(EVENT *event);
+extern Payload process_event(EVENT *event);
+extern ProcessEvent peventobj;
+extern UserspaceFilter filter;
+extern Logger logger;
 
 Events::Events(const struct bpf_map *map) {
 
@@ -41,6 +47,8 @@ void Events::producer() {
 }
 
 void Events::consumer() {
+
+  Payload p;
   while (!stop_flag) {
 
     std::unique_lock<std::mutex> lock(queue_mutex);
@@ -55,7 +63,16 @@ void Events::consumer() {
 
     lock.unlock();
 
-    print_event(&event);
+    if (filter.filterEvent(&event)) {
+      printf("Event filtered %s\n", event.filepath);
+      continue;
+    }
+
+    p = peventobj.Process(&event);
+
+    peventobj.print_event(&p);
+
+    logger.log(&p);
   }
 }
 
@@ -78,25 +95,4 @@ int callback(void *ctx, void *data, size_t size) {
   events->queue_cv.notify_one();
 
   return 0;
-}
-#define MAX_PATH_LEN 512
-#define PER_LEVEL 32
-#define MAX_DEPTH (MAX_PATH_LEN / PER_LEVEL)
-void print_event(EVENT *event) {
-
-  printf("Event: uid=%llu, change_type=%u, bytes_written=%u, "
-         "before_size=%lld\n",
-         (unsigned long long)event->uid, (unsigned int)event->change_type,
-         (unsigned int)event->bytes_written, (long long)event->before_size);
-
-  printf("file path: ");
-
-  for (int i = MAX_DEPTH - 1; i >= 0; i--) {
-    char *slot = event->filepath + i * PER_LEVEL;
-    if (slot[0] == '\0')
-      continue;
-    printf("/%s", slot);
-  }
-
-  printf("\n");
 }

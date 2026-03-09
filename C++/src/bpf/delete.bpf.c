@@ -38,7 +38,7 @@ int BPF_PROG(fentry_vfs_unlink, struct mnt_idmap *idmap, struct inode *dir,
 
   dentry_ctx->before_size = BPF_CORE_READ(dentry, d_inode, i_size);
   __builtin_memset(dentry_ctx->filepath, 0, sizeof(dentry_ctx->filepath));
-  construct_path(dentry_ctx->filepath);
+  construct_path(dentry, dentry_ctx->filepath, &dentry_ctx->len);
 
   bpf_map_update_elem(&LruMap, &pid_tgid, dentry_ctx, BPF_ANY);
   return 0;
@@ -67,10 +67,12 @@ int BPF_PROG(fexit_vfs_unlink, struct mnt_idmap *idmap, struct inode *dir,
 
   // populate the event
   event->before_size = dentry_ctx->before_size;
-  event->change_type = dentry_ctx->change_type;
+  event->change_type = DELETE_EVENT;
   event->uid = bpf_get_current_uid_gid() >> 32;
   event->bytes_written = 0;
   event->file_size = 0;
+  event->len = dentry_ctx->len;
+  getTTY(event);
 
   __builtin_memcpy(event->filepath, dentry_ctx->filepath,
                    sizeof(event->filepath));
@@ -126,11 +128,11 @@ int BPF_PROG(fentry_vfs_rmdir, struct mnt_idmap *idmap, struct inode *dir,
 
   /* optional: clear it */
   __builtin_memset(dentry_ctx, 0, sizeof(*dentry_ctx));
-  dentry_ctx->before_size = BPF_CORE_READ(ino, i_size);
+  dentry_ctx->before_size = 4096;
   dentry_ctx->inode = BPF_CORE_READ(ino, i_ino);
   dentry_ctx->dev = BPF_CORE_READ(ino, i_sb, s_dev);
   __builtin_memset(dentry_ctx->filepath, 0, sizeof(dentry_ctx->filepath));
-  construct_path(dentry, dentry_ctx->filepath);
+  construct_path(dentry, dentry_ctx->filepath, &dentry_ctx->len);
 
   bpf_map_update_elem(&LruMap, &pid_tgid, dentry_ctx, BPF_ANY);
 
@@ -167,11 +169,12 @@ int BPF_PROG(fexit_vfs_rmdir, struct mnt_idmap *idmap, struct inode *dir,
 
   // populate the event
   event->before_size = dentry_ctx->before_size;
-  event->change_type = dentry_ctx->change_type;
   event->uid = bpf_get_current_uid_gid() >> 32;
   event->bytes_written = 0;
   event->file_size = 0;
   event->change_type = DELETE_EVENT;
+  event->len = dentry_ctx->len;
+  getTTY(event);
 
   __builtin_memcpy(event->filepath, dentry_ctx->filepath,
                    sizeof(event->filepath));

@@ -12,6 +12,8 @@
 #include <cerrno>
 #include <cstring>
 
+user_space_filter *Parser::getUserSpaceFilter() { return userSpaceFilter; }
+
 std::pair<std::string, std::string> split_once(const std::string &str,
                                                char delim) {
   size_t pos = str.find(delim);
@@ -37,7 +39,7 @@ Parser::Parser(const std::string &policyFilePath) {
 
   this->tokens = new std::vector<Token>();
   this->api_header = new std::vector<std::pair<std::string, std::string>>();
-  this->api_url = new std::vector<std::string>();
+  this->api_url = new std::string;
 
   this->include_dir = new std::vector<std::pair<KEY, VALUE>>;
   this->exclude_dir = new std::unordered_map<std::string, int>;
@@ -101,7 +103,7 @@ int Parser::tokenize() {
 int Parser::syntaxValidation() {
 
   std::unordered_map<std::string, int> rules = {
-      {"D", 1}, {"E", 1}, {"EE", 1}, {"ES", 1}, {"IF", 1}};
+      {"D", 1}, {"E", 1}, {"EE", 1}, {"ES", 1}, {"IF", 1}, {"EP", 1}, {"P", 1}};
 
   std::unordered_map<std::string, int> metadata = {{"API_URL", 1},
                                                    {"API_HEADER", 1}};
@@ -137,10 +139,12 @@ int Parser::semanticValidation() {
     }
 
     if (token.command == "EE") {
-      if (!token.argument.starts_with(".")) {
-        fprintf(
-            stderr, "%s:%d: error: argument must be an absolute path '%s'\n",
-            policyFilePath.c_str(), token.lineNumber, token.argument.c_str());
+      if (token.argument.starts_with(".")) {
+        fprintf(stderr,
+                "%s:%d: error: EE argument should not include '.' in starting "
+                "'%s'\n",
+                policyFilePath.c_str(), token.lineNumber,
+                token.argument.c_str());
         return -1;
       }
       continue;
@@ -190,9 +194,7 @@ void Parser::printParser() const {
 
   // print api url
   printf("API_URL\n");
-  for (const auto &url : *api_url) {
-    printf("API_URL: %s\n", url.c_str());
-  }
+  printf("API_URL: %s\n", api_url->c_str());
 
   // print api header
   printf("API_HEADER\n");
@@ -233,7 +235,7 @@ void Parser::printParser() const {
   // print exclude pattern
   printf("Exclude patterns: \n");
   for (const auto &pattern : userSpaceFilter->exclude_pattern) {
-    printf("EP: %s\n", pattern.c_str());
+    printf("P: %s\n", pattern.c_str());
   }
 }
 #endif
@@ -345,10 +347,10 @@ int Parser::fill_exclusion_rules() {
       userSpaceFilter->exclude_suffix.push_back(token.argument);
     } else if (token.command == "EP") {
       userSpaceFilter->exclude_prefix.push_back(token.argument);
-    } else if (token.command == "EF") {
+    } else if (token.command == "P") {
       userSpaceFilter->exclude_pattern.push_back(token.argument);
     } else if (token.command == "API_URL") {
-      api_url->push_back(token.argument);
+      *api_url = token.argument;
     } else if (token.command == "API_HEADER") {
       auto [name, value] = split_once(token.argument, '=');
       api_header->push_back({name, value});

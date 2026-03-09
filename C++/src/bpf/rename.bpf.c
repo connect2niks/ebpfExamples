@@ -1,6 +1,6 @@
 #include "helpers.h"
 #include "maps.h"
-#include "types.h"
+#include "shared_types.h"
 #include "vmlinux.h"
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
@@ -102,10 +102,8 @@ int BPF_PROG(fentry_vfs_rename, struct renamedata *rd) {
       is_cross_dir; /* NOTE: add bool is_cross_dir to dentry_ctx in types.h */
   d_ctx->inode = BPF_CORE_READ(old_inode, i_ino);
   d_ctx->dev = BPF_CORE_READ(old_inode, i_sb, s_dev);
-  d_ctx->change_type = RENAME_D_EVENT;
 
-  bpf_probe_read_str(d_ctx->filepath, sizeof(d_ctx->filepath),
-                     BPF_CORE_READ(old_dentry, d_name.name));
+  construct_path(old_dentry, d_ctx->filepath, &d_ctx->len);
 
   d_ctx->before_size = BPF_CORE_READ(old_inode, i_size);
 
@@ -139,12 +137,13 @@ int BPF_PROG(fexit_vfs_rename, struct renamedata *rd, int ret) {
   event_d->uid = bpf_get_current_uid_gid() >> 32;
   event_d->bytes_written = 0;
   event_d->file_size = old_ctx->before_size;
+  getTTY(event_d);
 
   /*
    * 1️⃣  DELETE old path
    */
   event_d->before_size = old_ctx->before_size;
-  event_d->change_type = old_ctx->change_type;
+  event_d->change_type = RENAME_D_EVENT;
 
   /*
    * InodeMap DELETE — folders only, cross-dir move OUT of monitored area.
@@ -175,13 +174,13 @@ int BPF_PROG(fexit_vfs_rename, struct renamedata *rd, int ret) {
   event_c->uid = bpf_get_current_uid_gid() >> 32;
   event_c->bytes_written = 0;
   event_c->file_size = old_ctx->before_size;
+  getTTY(event_c);
 
   if (old_ctx->overwrite) {
     event_c->before_size = old_ctx->target_size;
     event_c->change_type = RENAME_OW_EVENT;
 
-    bpf_probe_read_str(event_c->filepath, sizeof(event_c->filepath),
-                       BPF_CORE_READ(new_dentry, d_name.name));
+    construct_path(new_dentry, event_c->filepath, &event_c->len);
     print_event("fexit_vfs_rename", event_c);
     bpf_ringbuf_submit(event_c, 0);
     goto cleanup;

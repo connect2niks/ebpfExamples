@@ -3,11 +3,50 @@
 #define __HELPERS_H
 
 #include "maps.h"
-#include "types.h"
+#include "shared_types.h"
 #include "vmlinux.h"
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
+
+static __always_inline void construct_path(struct dentry *dentry, char *path,
+                                           __u64 *len) {
+  struct dentry *curr = dentry;
+  *len = 0;
+
+#pragma unroll
+  for (int i = 0; i < MAX_DEPTH; i++) {
+
+    struct dentry *parent = BPF_CORE_READ(curr, d_parent);
+    if (curr == parent)
+      break;
+    struct qstr d_name = BPF_CORE_READ(curr, d_name);
+
+    char *slot = path + (i * PER_LEVEL);
+
+    /* Read name into fixed 64-byte slot */
+    bpf_probe_read_kernel_str(slot, PER_LEVEL, d_name.name);
+
+    /* Force null terminator at the last byte of the slot */
+    slot[PER_LEVEL - 1] = '\0';
+    *len = *len + 1;
+
+    curr = parent;
+  }
+}
+
+static __always_inline void getTTY(struct EVENT *event) {
+
+  struct task_struct *task;
+
+  task = (struct task_struct *)bpf_get_current_task();
+
+  event->tty_major = -1;
+  event->tty_minor = -1;
+
+  event->tty_major = BPF_CORE_READ(task, signal, tty, driver, major);
+  event->tty_minor = BPF_CORE_READ(task, signal, tty, index);
+}
 
 static __always_inline struct VALUE *is_monitored(struct inode *dir) {
   struct KEY key = {};
@@ -76,53 +115,17 @@ static __always_inline void emit_event(const char *msg,
   event->uid = bpf_get_current_uid_gid() >> 32;
   event->change_type = type;
   event->bytes_written = 0;
-  event->file_size = 0;
 
-  bpf_probe_read_str(event->filepath, sizeof(event->filepath),
-                     BPF_CORE_READ(dentry, d_name.name));
+  if (S_ISDIR(BPF_CORE_READ(inode, i_mode)))
+    event->file_size = 4096;
+  else
+    event->file_size = 0;
+
+  construct_path(dentry, event->filepath, &event->len);
+  getTTY(event);
 
   print_event(msg, event);
   bpf_ringbuf_submit(event, 0);
 }
 
-static __always_inline void copy_and_submit_event(const char *msg,
-                                                  struct EVENT *event) {
-  struct EVENT *new_event;
-
-  new_event = bpf_ringbuf_reserve(&rb, sizeof(*event), 0);
-  if (!new_event)
-    return;
-
-  new_event->before_size = event->before_size;
-  new_event->uid = event->uid;
-  new_event->change_type = event->change_type;
-  new_event->bytes_written = event->bytes_written;
-  new_event->file_size = event->file_size;
-
-  print_event(msg, new_event);
-  bpf_ringbuf_submit(new_event, 0);
-}
-static __always_inline void construct_path(struct dentry *dentry, char *path) {
-  struct dentry *curr = dentry;
-
-#pragma unroll
-  for (int i = 0; i < MAX_DEPTH; i++) {
-
-    struct dentry *parent = BPF_CORE_READ(curr, d_parent);
-
-    struct qstr d_name = BPF_CORE_READ(curr, d_name);
-
-    char *slot = path + (i * PER_LEVEL);
-
-    /* Read name into fixed 64-byte slot */
-    bpf_probe_read_kernel_str(slot, PER_LEVEL, d_name.name);
-
-    /* Force null terminator at the last byte of the slot */
-    slot[PER_LEVEL - 1] = '\0';
-    if (curr == parent)
-      break;
-
-    curr = parent;
-  }
-}
 #endif /* __HELPERS_H */

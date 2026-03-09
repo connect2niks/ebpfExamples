@@ -6,32 +6,20 @@
 #include <unistd.h>
 
 #include "event.hpp"
+#include "logging.hpp"
 #include "parser.hpp"
+#include "processevent.hpp"
 #include "shared_types.h"
+#include "userspacefilter.hpp"
 
 extern "C" {
 #include "fentry_bpf.skel.h"
 }
 using namespace std;
 
-void example_map_insert(fentry_bpf *skel) {
-
-  KEY k = {0};
-  VALUE v = {0};
-
-  k.inode = 5025202;
-  k.dev = 271581196;
-
-  v.dummy = 1;
-
-  int err = bpf_map__update_elem(skel->maps.InodeMap, &k, sizeof(k), &v,
-                                 sizeof(v), BPF_ANY);
-  if (err) {
-    fprintf(stderr, "Failed to update map\n");
-    return;
-  }
-  fprintf(stderr, "Successfully updated map\n");
-}
+ProcessEvent peventobj;
+UserspaceFilter filter;
+Logger logger;
 
 int load_Inode_map(Parser *obj, fentry_bpf *skel) {
 
@@ -97,6 +85,9 @@ int main(int argc, char **argv) {
   }
 
   load_Inode_map(parser, skel);
+  peventobj.initProcessEvent();
+  filter.initFilter(parser);
+  logger.init(parser);
 
   events = new Events(skel->maps.rb);
 

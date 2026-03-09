@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 //
+#include "helpers.h"
 #include "maps.h"
-#include "types.h"
+#include "shared_types.h"
 #include "vmlinux.h"
 #include <bpf/bpf_core_read.h>
 #include <bpf/bpf_helpers.h>
@@ -41,9 +42,10 @@ int BPF_PROG(fim_file_permission, struct file *file, int mask) {
   event->uid = bpf_get_current_uid_gid() >> 32;
   event->change_type = WRITE_EVENT;
   event->bytes_written = 0;
+  getTTY(event);
 
-  bpf_probe_read_str(event->filepath, sizeof(event->filepath),
-                     BPF_CORE_READ(file, f_path.dentry, d_name.name));
+  construct_path(BPF_CORE_READ(file, f_path.dentry), event->filepath,
+                 &event->len);
 
   bpf_printk("file_permission: filename=%s before=%lld", event->filepath, size);
 

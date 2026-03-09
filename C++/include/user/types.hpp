@@ -13,16 +13,4 @@ struct user_space_filter {
   std::vector<std::string> exclude_pattern;
 };
 
-struct Packet {
-
-  std::string full_path;
-  std::string ip_address;
-  std::string tty;
-  std::string before_size;
-  std::string file_size;
-  std::string event_type;
-  std::string timestamp;
-  std::string username;
-};
-
 #endif

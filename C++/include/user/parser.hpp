@@ -38,7 +38,7 @@ public:
 
   void parsePolicyFile();
 
-  const user_space_filter &getUserSpaceFilter() const;
+  user_space_filter *getUserSpaceFilter();
   const std::vector<std::string> &getApiUrl() const;
   const std::vector<std::pair<std::string, std::string>> &getApiHeader() const;
   const std::unordered_map<KEY, VALUE> &getIncludeDir() const;
@@ -52,7 +52,7 @@ public:
   std::vector<Token> *tokens;
 
   /* API configuration */
-  std::vector<std::string> *api_url;
+  std::string *api_url;
   std::vector<std::pair<std::string, std::string>> *api_header;
 
   /* exclusion rules */
